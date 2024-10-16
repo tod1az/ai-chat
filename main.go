@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	"os"
-
 	"github.com/google/generative-ai-go/genai"
 	"github.com/joho/godotenv"
 	"google.golang.org/api/option"
+	"os"
 )
 
 func main() {
@@ -22,11 +22,31 @@ func main() {
 	}
 	defer client.Close()
 	model := client.GenerativeModel("gemini-1.5-flash")
-	resp, err := model.GenerateContent(ctx, genai.Text("Cuentame un chiste"))
-	if err != nil {
-		fmt.Printf("Error getting a response: %v\n", err.Error())
+	userPromt := ""
+	for userPromt != "salir" {
+		fmt.Println("Pregunta algo ( escriba salir para terminar )")
+		prompt := GetPromt()
+		if prompt == "salir" {
+			fmt.Println("chau chau")
+			os.Exit(1)
+		}
+		fmt.Printf("Usted: %v\n", prompt)
+		resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+		if err != nil {
+			fmt.Printf("Error getting a response: %v\n", err.Error())
+		}
+		fmt.Printf("Ai: %v\n", resp.Candidates[0].Content.Parts[0])
 	}
-	fmt.Println(resp.Candidates[0].Content.Parts[0])
+
+}
+
+func GetPromt() string {
+	scanner := bufio.NewScanner(os.Stdin)
+	var prompt string
+	if scanner.Scan() {
+		prompt = scanner.Text()
+	}
+	return prompt
 }
 
 func Initialize(ctx context.Context) (*genai.Client, error) {
