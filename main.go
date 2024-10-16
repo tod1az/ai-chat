@@ -1,53 +1,38 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"github.com/joho/godotenv"
-	"net/http"
 	"os"
+
+	"github.com/google/generative-ai-go/genai"
+	"github.com/joho/godotenv"
+	"google.golang.org/api/option"
 )
-
-// testing git
-type Text struct {
-	Text string `json:"text"`
-}
-type Parts struct {
-	Parts []Text `json:"parts"`
-}
-
-type Body struct {
-	Contents []Parts `json:"contents"`
-}
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Printf("Error: %v. Error cargando las variables de entorno\n", err.Error())
+		fmt.Println("Error loading enviroment variables!")
 	}
-	apikey := os.Getenv("GEMINI_API_KEY")
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=%v", apikey)
-	body := []byte(`{"contents":[{"parts":[{"text":"Que dia es hoy"}]}]}`)
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	ctx := context.Background()
+	client, err := Initialize(ctx)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("Error initializing: %v\n", err.Error())
 	}
-
-	req.Header.Add("Content-Type", "aplication/json")
-
-	client := &http.Client{}
-	res, err := client.Do(req)
+	defer client.Close()
+	model := client.GenerativeModel("gemini-1.5-flash")
+	resp, err := model.GenerateContent(ctx, genai.Text("Cuentame un chiste"))
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("Error getting a response: %v\n", err.Error())
 	}
-	defer res.Body.Close()
+	fmt.Println(resp.Candidates[0].Content.Parts[0])
+}
 
-	var result map[string]interface{}
-	decErr := json.NewDecoder(res.Body).Decode(&result)
-	if decErr != nil {
-		fmt.Println(err.Error())
+func Initialize(ctx context.Context) (*genai.Client, error) {
+	client, err := genai.NewClient(ctx, option.WithAPIKey(os.Getenv("GEMINI_API_KEY")))
+	if err != nil {
+		return nil, err
 	}
-	fmt.Print(result)
+	return client, nil
 }
