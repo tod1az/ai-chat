@@ -22,8 +22,8 @@ func main() {
 	}
 	defer client.Close()
 	model := client.GenerativeModel("gemini-1.5-flash")
-	userPromt := ""
-	for userPromt != "salir" {
+	var prompt string
+	for prompt != "salir" {
 		fmt.Println("Pregunta algo ( escriba salir para terminar )")
 		prompt := GetPromt()
 		if prompt == "salir" {
