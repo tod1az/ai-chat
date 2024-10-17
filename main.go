@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/generative-ai-go/genai"
 	"github.com/joho/godotenv"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"os"
 )
@@ -31,11 +32,18 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("Usted: %v\n", prompt)
-		resp, err := model.GenerateContent(ctx, genai.Text(prompt))
-		if err != nil {
-			fmt.Printf("Error getting a response: %v\n", err.Error())
+		iter := model.GenerateContentStream(ctx, genai.Text(prompt))
+		fmt.Print("Ai: ")
+		for {
+			resp, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				fmt.Printf("Error getting a response: %v\n", err.Error())
+			}
+			fmt.Print(resp.Candidates[0].Content.Parts[0])
 		}
-		fmt.Printf("Ai: %v\n", resp.Candidates[0].Content.Parts[0])
 	}
 
 }
